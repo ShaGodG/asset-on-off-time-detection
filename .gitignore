@@ -105,3 +105,4 @@ venv.bak/
 
 
 configuration_file.py
+*.pkl
