@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: influx
+  namespace: cody
+type: Opaque
+data:
+  host: NDAuMTI3LjEyOS4yMzk=
+  port: ODA4Ng==
+  database: aW90
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sql
+  namespace: cody
+type: Opaque
+data:
+  host: MTAuMC4xLjhcVEVTVDIwMTc=
+  database: Q2xvdWRmbV9JT1RfQ29keQ==
+  username: Y29keQ==
+  password: aml1cmVu
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: onoff-detection
+  namespace: cody
+  labels:
+    app: onoff-detection
+    mindsett.type: analysis
+    mindsett.status: development
+    mindsett.owner: cody
+    mindsett.deployment: mae
+spec:
+  clusterIP: None
+  selector:
+    app: onoff-detection
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: onoff-detection
+  namespace: cody
+  labels:
+    mindsett.type: analysis
+    mindsett.status: development
+    mindsett.owner: cody
+    mindsett.deployment: mae
+spec:
+  selector:
+    matchLabels:
+      app: onoff-detection # has to match .spec.template.metadata.labels
+  serviceName: "onoff-detection"
+  replicas: 1 # by default is 1
+  template:
+        metadata:
+          labels:
+            app: onoff-detection # has to match .spec.selector.matchLabels
+        spec:
+          terminationGracePeriodSeconds: 10
+
+          containers:
+            - name: detector
+              image: freedom.azurecr.io/iot/cody/onoff-detection:latest
+              env:
+                - name: InfluxDB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: influx
+                      key: host
+                - name: InfluxDB_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: influx
+                      key: database
+                - name: InfluxDB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: influx
+                      key: port
+                - name: SQL_SERVER
+                  valueFrom:
+                    secretKeyRef:
+                      name: sql
+                      key: host
+                - name: SQL_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: sql
+                      key: database
+                - name: SQL_UID
+                  valueFrom:
+                    secretKeyRef:
+                      name: sql
+                      key: username
+                - name: SQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: sql
+                      key: password
+
+
+              command:
+                - "/service/run.sh"
