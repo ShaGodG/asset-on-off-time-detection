@@ -103,6 +103,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-
+# custome
+.DS_Store
 configuration_file.py
 *.pkl
